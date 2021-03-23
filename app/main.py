@@ -26,5 +26,8 @@ def teams():
         return jsonify(asyncio.run(get_squad(team_id)))
     return jsonify({ "status": "Error: Specify team index" })
 
+def serve():
+    return app
+
 if __name__ == "__main__":
     app.run()

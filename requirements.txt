@@ -1,4 +1,3 @@
-aiohttp
-asyncio
-flask
 fpl
+flask
+waitress
