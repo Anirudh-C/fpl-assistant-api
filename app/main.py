@@ -21,7 +21,7 @@ async def get_squad(team: int):
         players = await team.get_players(return_json=True)
     return players
 
-@app.route("/api/players", methods=["GET"])
+@app.route("/players", methods=["GET"])
 def teams():
     if "team" in request.args:
         team_id = int(request.args["team"])
@@ -33,7 +33,7 @@ async def fpl_login(email: str, password: str):
         fpl = FPL(session)
         await fpl.login(email, password)
 
-@app.route("/api/login", methods=["POST"])
+@app.route("/login", methods=["POST"])
 def login():
     try:
         username = request.form["login"]
