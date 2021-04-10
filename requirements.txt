@@ -2,3 +2,5 @@ fpl
 flask
 waitress
 cryptography
+SQLAlchemy
+PyMySQL
