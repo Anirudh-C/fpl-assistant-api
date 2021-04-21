@@ -4,3 +4,4 @@ waitress
 cryptography
 SQLAlchemy
 PyMySQL
+pytest
