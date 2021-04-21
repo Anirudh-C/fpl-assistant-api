@@ -1,4 +1,4 @@
-name: FPL Assistant Backend-End CI
+name: FPL Assistant Backend CI
 
 on:
   pull_request:
