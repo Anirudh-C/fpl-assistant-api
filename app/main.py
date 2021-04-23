@@ -12,6 +12,7 @@ from fpl import FPL
 
 # DB imports
 import sqlalchemy
+import Database
 
 # Encryption imports
 from cryptography.fernet import Fernet
@@ -28,18 +29,38 @@ db_pass = os.environ.get("DB_PASS")
 db = sqlalchemy.create_engine(
     "mysql+pymysql://{}:{}@{}/FPL".format(db_user, db_pass, db_host))
 
+engine = db.connect()
 # CLI commands
 @app.cli.command("initdb")
 def initdb():
     """
     Initialise database with schema
     """
-    with db.connect() as connection:
-        # Create schema
-        # TODO: add full schema here
-        connection.execute(
-            sqlalchemy.sql.text(
-                "CREATE TABLE IF NOT EXISTS USER( id INT PRIMARY KEY, email TEXT, enc_pass TEXT );"))
+    # with db.connect() as connection:
+    #     # Create schema
+    #     # TODO: add full schema here
+    #     connection.execute(
+    #         sqlalchemy.sql.text(
+    #             "CREATE TABLE IF NOT EXISTS USER( id INT PRIMARY KEY, email TEXT, enc_pass TEXT );"))
+    
+    Database.create_db("Database/schema.sql", engine)
+    asyncio.run(Database.add_teams(engine))
+    asyncio.run(Database.add_players(engine))
+
+@app.cli.command("updatedb")
+def updatedb():
+    """
+    Initialise database with schema
+    """
+    # with db.connect() as connection:
+    #     # Create schema
+    #     # TODO: add full schema here
+    #     connection.execute(
+    #         sqlalchemy.sql.text(
+    #             "CREATE TABLE IF NOT EXISTS USER( id INT PRIMARY KEY, email TEXT, enc_pass TEXT );"))
+    
+    asyncio.run(Database.update_teams(engine))
+    asyncio.run(Database.update_players(engine))
 
 # API Routes
 # Root
@@ -50,16 +71,21 @@ def root():
     """
     return jsonify({ "status": "Success" })
 
-async def get_squad(team: int):
+def get_squad(team: int):
     """
     Get players from :team:
     :param: team - int (1-20) team index
     """
-    async with aiohttp.ClientSession() as session:
-        fpl = FPL(session)
-        team = await fpl.get_team(team)
-        players = await team.get_players(return_json=True)
-    return players
+    # async with aiohttp.ClientSession() as session:
+    #     fpl = FPL(session)
+    #     team = await fpl.get_team(team)
+    #     players = await team.get_players(return_json=True)
+    # return players
+
+    query = sqlalchemy.text("""SELECT * from PLAYER WHERE team_id = :x;""")
+    result = engine.execute(query, x = team)
+    result = [dict(res) for res in result]
+    return result
 
 # Players route
 @app.route("/players", methods=["GET"])
@@ -69,8 +95,33 @@ def players():
     """
     if "team" in request.args:
         team_id = int(request.args["team"])
-        return jsonify(asyncio.run(get_squad(team_id)))
+        return jsonify(get_squad(team_id))
     return jsonify({ "status": "Error: Specify team index" })
+
+
+def get_players():
+    """
+    Get players from :team:
+    :param: team - int (1-20) team index
+    """
+    # async with aiohttp.ClientSession() as session:
+    #     fpl = FPL(session)
+    #     team = await fpl.get_team(team)
+    #     players = await team.get_players(return_json=True)
+    # return players
+
+    query = sqlalchemy.text("""SELECT * from PLAYER;""")
+    result = engine.execute(query)
+    result = [dict(res) for res in result]
+    return result
+
+# AllPlayers route
+@app.route("/allplayers", methods=["GET"])
+def aplayers():
+    """
+    Get all players of the league
+    """
+    return jsonify(get_players())
 
 async def fpl_login(email: str, password: str) -> int:
     """

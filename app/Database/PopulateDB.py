@@ -48,7 +48,7 @@ async def add_players(engine):
         add_player(player, engine)
 
 def add_team(Team, engine):
-    query = text("""REPLACE INTO TEAM (id, team_name, short_name, strength, strength_overall_home,
+    query = text("""INSERT INTO TEAM (id, team_name, short_name, strength, strength_overall_home,
                     strength_overall_away,strength_attack_home,strength_attack_away,
                     strength_defence_home,strength_defence_away) 
                     VALUES (:id, :team_name, :short_name, :strength, :strength_overall_home,
