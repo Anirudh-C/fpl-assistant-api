@@ -1,5 +1,3 @@
-# Basic imports
-
 # DB imports
 from sqlalchemy import create_engine
 from sqlalchemy import text
@@ -8,8 +6,9 @@ from sqlalchemy import text
 def create_db(sql_file, engine):
     run_database_file(sql_file, engine)
 
+
 def run_database_file(sql_file, engine):
-    sql_file = open(sql_file,'r')
+    sql_file = open(sql_file, 'r')
     # Create an empty command string
     sql_command = ''
 
@@ -34,9 +33,8 @@ def run_database_file(sql_file, engine):
                 finally:
                     sql_command = ''
 
+
 if __name__ == "__main__":
     engine = create_engine("mysql+pymysql://root:pass@localhost:3600")
     engine = engine.connect()
     create_db("schema.sql", engine)
-
-
