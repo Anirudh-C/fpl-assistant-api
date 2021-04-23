@@ -29,18 +29,16 @@ db_pass = os.environ.get("DB_PASS")
 db = sqlalchemy.create_engine("mysql+pymysql://{}:{}@{}/FPL".format(
     db_user, db_pass, db_host))
 
-engine = db.connect()
-
-
 # CLI commands
 @app.cli.command("initdb")
 def initdb():
     """
     Initialise database with schema
     """
-    DBUtils.create_db("app/Database/schema.sql", engine)
-    asyncio.run(DBUtils.add_teams(engine))
-    asyncio.run(DBUtils.add_players(engine))
+    with db.connect() as engine:
+        DBUtils.create_db("app/Database/schema.sql", engine)
+        asyncio.run(DBUtils.add_teams(engine))
+        asyncio.run(DBUtils.add_players(engine))
 
 
 @app.cli.command("updatedb")
@@ -48,7 +46,8 @@ def updatedb():
     """
     Initialise database with schema
     """
-    asyncio.run(DBUtils.update_players(engine))
+    with db.connect() as engine:
+        asyncio.run(DBUtils.update_players(engine))
 
 
 # API Routes
