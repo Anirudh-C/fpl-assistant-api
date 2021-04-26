@@ -60,30 +60,40 @@ def root():
     return jsonify({"status": "Success"})
 
 
-def get_squad(team: int):
+# Get team mapping
+@app.route("/teams", methods=["GET"])
+def teams():
     """
-    Get players from :team:
-    :param: team - int (1-20) team index
+    Return team ID to team name mapping
     """
-    with db.connect() as engine:
-        query = sqlalchemy.text("""SELECT * from PLAYER WHERE team_id = :x;""")
-        result = engine.execute(query, x=team)
-        result = [dict(res) for res in result]
-        return result
+    return jsonify({
+        "teams":
+        [
+            "Arsenal",
+            "Aston Villa",
+            "Brighton & Hove Albion",
+            "Burnley",
+            "Chelsea",
+            "Crystal Palace",
+            "Everton",
+            "Fulham",
+            "Leeds United",
+            "Leicester City",
+            "Liverpool",
+            "Manchester City",
+            "Manchester United",
+            "Newcastle United",
+            "Sheffield United",
+            "Southampton",
+            "Tottenham Hotspur",
+            "West Bromwich Albion",
+            "West Ham United",
+            "Wolverhampton Wanderers",
+        ]
+    })
 
 
-# Players route
-@app.route("/players", methods=["GET"])
-def players():
-    """
-    Get players in a particular team via request argument
-    """
-    if "team" in request.args:
-        team_id = int(request.args["team"])
-        return jsonify(get_squad(team_id))
-    return jsonify({"status": "Error: Specify team index"})
-
-
+# Search all players
 @app.route("/search_players", methods=["GET"])
 def search_players():
     """
