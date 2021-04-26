@@ -1,5 +1,6 @@
 # Basic imports
 import os
+import random
 
 # DB imports
 from sqlalchemy import create_engine
@@ -39,7 +40,7 @@ def add_player(Player, session):
                     total_points = Player.total_points, goals_scored = Player.goals_scored,
                     assists = Player.assists, clean_sheets = Player.clean_sheets, saves = Player.saves, bonus = Player.bonus,
                     bps = Player.bps, influence = Player.influence, creativity = Player.creativity, 
-                    threat = Player.threat, ict_index = Player.ict_index, full_name = full_name, score = 0)
+                    threat = Player.threat, ict_index = Player.ict_index, full_name = full_name, score = 100 * random.random())
 
 
 async def add_players(engine):

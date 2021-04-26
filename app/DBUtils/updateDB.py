@@ -1,5 +1,6 @@
 # Basic imports
 import os
+import random
 
 # DB imports
 from sqlalchemy import create_engine
@@ -24,7 +25,7 @@ def update_player(Player, session):
                     saves = :saves, bonus = :bonus, bps = :bps, influence = :influence, creativity = :creativity,
                     threat = :threat, ict_index = :ict_index, score = :score  WHERE id = :id""")
 
-    score = 0 #foo(Player)
+    score = 100 * random.random()
     session.execute(query, element_status = Player.status,chance_of_playing_next_round = Player.chance_of_playing_next_round ,
                     chance_of_playing_this_round = Player.chance_of_playing_this_round, ep_next = Player.ep_next, 
                     ep_this = Player.ep_this, event_points = Player.event_points,
