@@ -19,14 +19,16 @@ def add_player(Player, session):
                     chance_of_playing_this_round, ep_next, ep_this, event_points,
                     form, now_cost, points_per_game, total_points, goals_scored,
                     assists, clean_sheets, saves, bonus, bps, influence, creativity,
-                    threat, ict_index) 
+                    threat, ict_index, full_name, score) 
                     VALUES (:code, :element_type, :web_name,
                     :id, :team_id, :element_status, :chance_of_playing_next_round,
                     :chance_of_playing_this_round, :ep_next, :ep_this, :event_points,
                     :form, :now_cost, :points_per_game, :total_points, :goals_scored,
                     :assists, :clean_sheets, :saves, :bonus, :bps, :influence, :creativity,
-                    :threat, :ict_index);""")
+                    :threat, :ict_index, :full_name, :score);""")
+    
 
+    full_name = Player.first_name + " " + Player.second_name
     session.execute(query, code = Player.code, element_type = Player.element_type, web_name = Player.web_name,
                     id = Player.id, team_id = Player.team, element_status = Player.status, 
                     chance_of_playing_next_round = Player.chance_of_playing_next_round ,
@@ -36,7 +38,7 @@ def add_player(Player, session):
                     total_points = Player.total_points, goals_scored = Player.goals_scored,
                     assists = Player.assists, clean_sheets = Player.clean_sheets, saves = Player.saves, bonus = Player.bonus,
                     bps = Player.bps, influence = Player.influence, creativity = Player.creativity, 
-                    threat = Player.threat, ict_index = Player.ict_index)
+                    threat = Player.threat, ict_index = Player.ict_index, full_name = full_name, score = 0)
 
 
 async def add_players(engine):

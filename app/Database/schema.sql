@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS PLAYER(
     creativity integer,
     threat integer,
     ict_index integer,
+    full_name text,
+    score float,
     CONSTRAINT pk_player PRIMARY KEY (id),
     CONSTRAINT fk_team_id FOREIGN KEY (team_id) REFERENCES TEAM(id)
 );

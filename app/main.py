@@ -101,8 +101,7 @@ def players():
 
 def get_players():
     """
-    Get players from :team:
-    :param: team - int (1-20) team index
+    Get all players
     """
     # async with aiohttp.ClientSession() as session:
     #     fpl = FPL(session)
@@ -115,12 +114,20 @@ def get_players():
     result = [dict(res) for res in result]
     return result
 
-# AllPlayers route
-@app.route("/allplayers", methods=["GET"])
+def get_player(name: str):
+    query = sqlalchemy.text("""SELECT * from PLAYER WHERE full_name LIKE ':name%'""")
+    result = engine.execute(query, name = name)
+    result = [dict(res) for res in result]
+    return result
+
+@app.route("/search_players", methods=["GET"])
 def aplayers():
     """
     Get all players of the league
     """
+    if "name" in request.args:
+        name = int(request.args["name"])
+        return jsonify(get_player(name))
     return jsonify(get_players())
 
 async def fpl_login(email: str, password: str) -> int:

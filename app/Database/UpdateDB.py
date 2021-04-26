@@ -21,8 +21,9 @@ def update_player(Player, session):
                     now_cost = :now_cost, points_per_game = :points_per_game, total_points = :total_points, 
                     goals_scored = :goals_scored, assists = :assists, clean_sheets = :clean_sheets, 
                     saves = :saves, bonus = :bonus, bps = :bps, influence = :influence, creativity = :creativity,
-                    threat = :threat, ict_index = :ict_index  WHERE id = :id""")
+                    threat = :threat, ict_index = :ict_index, score = :score  WHERE id = :id""")
 
+    score = 0 #foo(Player)
     session.execute(query, element_status = Player.status,chance_of_playing_next_round = Player.chance_of_playing_next_round ,
                     chance_of_playing_this_round = Player.chance_of_playing_this_round, ep_next = Player.ep_next, 
                     ep_this = Player.ep_this, event_points = Player.event_points,
@@ -30,7 +31,7 @@ def update_player(Player, session):
                     total_points = Player.total_points, goals_scored = Player.goals_scored,
                     assists = Player.assists, clean_sheets = Player.clean_sheets, saves = Player.saves, bonus = Player.bonus,
                     bps = Player.bps, influence = Player.influence, creativity = Player.creativity, 
-                    threat = Player.threat, ict_index = Player.ict_index, id = Player.id)
+                    threat = Player.threat, ict_index = Player.ict_index, score = score, id = Player.id)
 
 
 async def update_players(engine):
@@ -73,7 +74,7 @@ def add_fixture(Fixture, engine):
 
 async def update_fixtures(engine):
     query = text("""truncate table FIXTURE;""")
-    engine.execute(query);
+    engine.execute(query)
     async with aiohttp.ClientSession() as session:
         fpl = FPL(session)
         fixtures = await fpl.get_fixtures()
@@ -84,16 +85,6 @@ async def update_fixtures(engine):
 if __name__ == "__main__":
     engine = create_engine("mysql+pymysql://root:pass@localhost:3600/FPL")
     engine = engine.connect()
-    # asyncio.run(update_teams(engine))
-    # asyncio.run(update_players(engine))
+    asyncio.run(update_teams(engine))
+    asyncio.run(update_players(engine))
     asyncio.run(update_fixtures(engine))
-
-    query = text("""SELECT * from FIXTURE;""")
-
-    result = engine.execute(query, x = 1)
-
-    result = [dict(res) for res in result]
-
-    for res in result:
-        print(res)
-
