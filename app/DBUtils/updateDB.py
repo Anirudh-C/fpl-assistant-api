@@ -104,15 +104,3 @@ if __name__ == "__main__":
     asyncio.run(update_teams(engine))
     asyncio.run(update_players(engine))
     asyncio.run(update_fixtures(engine))
-<<<<<<< HEAD:app/Database/UpdateDB.py
-=======
-
-    query = text("""SELECT * from FIXTURE;""")
-
-    result = engine.execute(query, x=1)
-
-    result = [dict(res) for res in result]
-
-    for res in result:
-        print(res)
->>>>>>> a4e76f6e3dea888167068bcdd9ebae6fccc073dd:app/DBUtils/updateDB.py
