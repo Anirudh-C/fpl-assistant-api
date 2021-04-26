@@ -36,7 +36,7 @@ def initdb():
     Initialise database with schema
     """
     with db.connect() as engine:
-        DBUtils.create_db("app/Database/schema.sql", engine)
+        DBUtils.create_db("app/DBUtils/schema.sql", engine)
         asyncio.run(DBUtils.add_teams(engine))
         asyncio.run(DBUtils.add_players(engine))
 
@@ -84,36 +84,27 @@ def players():
     return jsonify({"status": "Error: Specify team index"})
 
 
-def get_players():
-    """
-    Get all players
-    """
-    with db.connect() as engine:
-        query = sqlalchemy.text("""SELECT * from PLAYER;""")
-        result = engine.execute(query)
-        result = [dict(res) for res in result]
-        return result
-
-def get_player(name: str):
-    """
-    Get player matching with name
-    """
-    with db.connect() as engine:
-        query = sqlalchemy.text("""SELECT * from PLAYER WHERE full_name LIKE ':name%'""")
-        result = engine.execute(query, name = name)
-        result = [dict(res) for res in result]
-        return result
-
 @app.route("/search_players", methods=["GET"])
-def aplayers():
+def search_players():
     """
     Get all players of the league
     """
+    with db.connect() as engine:
+        query = sqlalchemy.text("""SELECT * from PLAYER;""");
+        players = [dict(player) for player in engine.execute(query)]
     if "name" in request.args:
-        name = int(request.args["name"])
-        return jsonify(get_player(name))
-    return jsonify(get_players())
-
+        players = [
+            player for player in players
+            if request.args["name"] in player["full_name"].lower()
+        ]
+        return jsonify({
+            "players": [
+                dict(player,
+                     match=player["full_name"].lower().index(request.args["name"]))
+                for player in players
+            ]
+        })
+    return jsonify({"players": players})
 
 async def fpl_login(email: str, password: str) -> int:
     """
