@@ -28,7 +28,7 @@ db_pass = os.environ.get("DB_PASS")
 # DB connection object
 db = sqlalchemy.create_engine("mysql+pymysql://{}:{}@{}/FPL".format(
     db_user, db_pass, db_host))
-
+engine = db.connect()
 # CLI commands
 @app.cli.command("initdb")
 def initdb():
