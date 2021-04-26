@@ -28,7 +28,7 @@ db_pass = os.environ.get("DB_PASS")
 # DB connection object
 db = sqlalchemy.create_engine("mysql+pymysql://{}:{}@{}/FPL".format(
     db_user, db_pass, db_host))
-engine = db.connect()
+
 # CLI commands
 @app.cli.command("initdb")
 def initdb():
@@ -65,10 +65,11 @@ def get_squad(team: int):
     Get players from :team:
     :param: team - int (1-20) team index
     """
-    query = sqlalchemy.text("""SELECT * from PLAYER WHERE team_id = :x;""")
-    result = engine.execute(query, x=team)
-    result = [dict(res) for res in result]
-    return result
+    with db.connect() as engine:
+        query = sqlalchemy.text("""SELECT * from PLAYER WHERE team_id = :x;""")
+        result = engine.execute(query, x=team)
+        result = [dict(res) for res in result]
+        return result
 
 
 # Players route
@@ -87,16 +88,21 @@ def get_players():
     """
     Get all players
     """
-    query = sqlalchemy.text("""SELECT * from PLAYER;""")
-    result = engine.execute(query)
-    result = [dict(res) for res in result]
-    return result
+    with db.connect() as engine:
+        query = sqlalchemy.text("""SELECT * from PLAYER;""")
+        result = engine.execute(query)
+        result = [dict(res) for res in result]
+        return result
 
 def get_player(name: str):
-    query = sqlalchemy.text("""SELECT * from PLAYER WHERE full_name LIKE ':name%'""")
-    result = engine.execute(query, name = name)
-    result = [dict(res) for res in result]
-    return result
+    """
+    Get player matching with name
+    """
+    with db.connect() as engine:
+        query = sqlalchemy.text("""SELECT * from PLAYER WHERE full_name LIKE ':name%'""")
+        result = engine.execute(query, name = name)
+        result = [dict(res) for res in result]
+        return result
 
 @app.route("/search_players", methods=["GET"])
 def aplayers():
