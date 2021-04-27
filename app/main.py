@@ -77,8 +77,8 @@ def teams():
             "Crystal Palace",
             "Everton",
             "Fulham",
-            "Leeds United",
             "Leicester City",
+            "Leeds United",
             "Liverpool",
             "Manchester City",
             "Manchester United",
@@ -93,6 +93,22 @@ def teams():
     })
 
 
+# Element type mapping
+@app.route("/element_types", methods=["GET"])
+def types():
+    """
+    Return element type to position mapping
+    """
+    return jsonify({
+        "element_types":
+        [
+            "Goalkeeper",
+            "Defender",
+            "Midfielder",
+            "Forward"
+        ]
+    })
+
 # Search all players
 @app.route("/search_players", methods=["GET"])
 def search_players():
@@ -100,7 +116,7 @@ def search_players():
     Get all players of the league
     """
     with db.connect() as engine:
-        query = sqlalchemy.text("""SELECT * from PLAYER;""");
+        query = sqlalchemy.text("""SELECT * from PLAYER ORDER BY score DESC;""");
         players = [dict(player) for player in engine.execute(query)]
     if "name" in request.args:
         players = [
