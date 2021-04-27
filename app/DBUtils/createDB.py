@@ -10,7 +10,7 @@ def create_db(sql_file, engine):
 def run_database_file(sql_file, engine):
     sql_file = open(sql_file, 'r')
     # Create an empty command string
-    sql_command = ''
+    sql_command = """"""
 
     # Iterate over all lines in the sql file
     for line in sql_file:
@@ -31,7 +31,7 @@ def run_database_file(sql_file, engine):
 
                 # Finally, clear command string
                 finally:
-                    sql_command = ''
+                    sql_command = """"""
 
 
 if __name__ == "__main__":

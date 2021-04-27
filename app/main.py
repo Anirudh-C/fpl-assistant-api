@@ -60,40 +60,6 @@ def root():
     """
     return jsonify({"status": "Success"})
 
-
-# Get team mapping
-@app.route("/teams", methods=["GET"])
-def teams():
-    """
-    Return team ID to team name mapping
-    """
-    return jsonify({
-        "teams":
-        [
-            "Arsenal",
-            "Aston Villa",
-            "Brighton & Hove Albion",
-            "Burnley",
-            "Chelsea",
-            "Crystal Palace",
-            "Everton",
-            "Fulham",
-            "Leicester City",
-            "Leeds United",
-            "Liverpool",
-            "Manchester City",
-            "Manchester United",
-            "Newcastle United",
-            "Sheffield United",
-            "Southampton",
-            "Tottenham Hotspur",
-            "West Bromwich Albion",
-            "West Ham United",
-            "Wolverhampton Wanderers",
-        ]
-    })
-
-
 # Element type mapping
 @app.route("/element_types", methods=["GET"])
 def types():
@@ -118,9 +84,15 @@ def search_players():
     """
     with db.connect() as engine:
         if "name" in request.args:
-            query = sqlalchemy.text("SELECT * from PLAYER WHERE full_name LIKE \'%{}%\' ORDER BY score DESC;".format(request.args["name"]))
+            query = sqlalchemy.text("""SELECT p.full_name, t.team_name, p.id, p.code, p.score, p.goals_scored, 
+                                       p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
+                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t 
+                                       WHERE p.full_name LIKE \'%{}%\' and p.team_id = t.id ORDER BY score DESC;""".format(request.args["name"]))
         else:
-            query = sqlalchemy.text("""SELECT * from PLAYER ORDER BY score DESC;""")
+            query = sqlalchemy.text("""SELECT p.full_name, p.team_id, p.id, p.code, p.score, p.goals_scored, 
+                                       p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
+                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t 
+                                       WHERE p.team_id = t.id ORDER BY score DESC;""")
         players = [dict(player) for player in engine.execute(query)]
     if "name" in request.args:
         return jsonify({
