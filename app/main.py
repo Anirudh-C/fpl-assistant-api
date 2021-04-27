@@ -1,5 +1,6 @@
 # Basic imports
 import os
+from unidecode import unidecode
 
 import flask
 from flask import jsonify, request, make_response
@@ -116,17 +117,16 @@ def search_players():
     Get all players of the league
     """
     with db.connect() as engine:
-        query = sqlalchemy.text("""SELECT * from PLAYER ORDER BY score DESC;""");
+        if "name" in request.args:
+            query = sqlalchemy.text("SELECT * from PLAYER WHERE full_name LIKE \'%{}%\' ORDER BY score DESC;".format(request.args["name"]))
+        else:
+            query = sqlalchemy.text("""SELECT * from PLAYER ORDER BY score DESC;""")
         players = [dict(player) for player in engine.execute(query)]
     if "name" in request.args:
-        players = [
-            player for player in players
-            if request.args["name"] in player["full_name"].lower()
-        ]
         return jsonify({
             "players": [
                 dict(player,
-                     match=player["full_name"].lower().index(request.args["name"]))
+                     match=unidecode(player["full_name"]).lower().index(request.args["name"]))
                 for player in players
             ]
         })
