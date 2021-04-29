@@ -4,6 +4,7 @@ from unidecode import unidecode
 
 import flask
 from flask import jsonify, request, make_response
+import click
 
 # FPL API wrapper imports
 import aiohttp
@@ -32,14 +33,16 @@ db = sqlalchemy.create_engine("mysql+pymysql://{}:{}@{}/FPL".format(
 
 # CLI commands
 @app.cli.command("initdb")
-def initdb():
+@click.option("testing", "-t", is_flag=True, default=False, required=False)
+def initdb(testing):
     """
     Initialise database with schema
     """
     with db.connect() as engine:
         DBUtils.create_db("app/DBUtils/schema.sql", engine)
-        asyncio.run(DBUtils.add_teams(engine))
-        asyncio.run(DBUtils.add_players(engine))
+        if not testing:
+            asyncio.run(DBUtils.add_teams(engine))
+            asyncio.run(DBUtils.add_players(engine))
 
 
 @app.cli.command("updatedb")
