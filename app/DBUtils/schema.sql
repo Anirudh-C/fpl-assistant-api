@@ -43,8 +43,17 @@ CREATE TABLE IF NOT EXISTS PLAYER(
     creativity integer,
     threat integer,
     ict_index integer,
+    full_name text,
+    score float,
     CONSTRAINT pk_player PRIMARY KEY (id),
     CONSTRAINT fk_team_id FOREIGN KEY (team_id) REFERENCES TEAM(id)
+);
+
+CREATE TABLE IF NOT EXISTS USER_TABLE(
+    id INTEGER,
+    user_email varchar(255),
+    user_password varchar(255),
+    CONSTRAINT pk_user PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS FIXTURE(
@@ -59,9 +68,4 @@ CREATE TABLE IF NOT EXISTS FIXTURE(
     CONSTRAINT fk_team_h FOREIGN KEY (team_h) REFERENCES TEAM(id)
 );
 
-CREATE TABLE IF NOT EXISTS USER(
-    id INTEGER,
-    user_email varchar(255),
-    user_password varchar(255),
-    CONSTRAINT pk_user PRIMARY KEY (id)
-); 
+ 

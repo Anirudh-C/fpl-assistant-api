@@ -1,8 +1,10 @@
 # Basic imports
 import os
+from unidecode import unidecode
 
 import flask
 from flask import jsonify, request, make_response
+import click
 
 # FPL API wrapper imports
 import aiohttp
@@ -12,7 +14,7 @@ from fpl import FPL
 
 # DB imports
 import sqlalchemy
-import Database
+import app.DBUtils as DBUtils
 
 # Encryption imports
 from cryptography.fernet import Fernet
@@ -26,41 +28,31 @@ db_user = os.environ.get("DB_USERNAME")
 db_pass = os.environ.get("DB_PASS")
 
 # DB connection object
-db = sqlalchemy.create_engine(
-    "mysql+pymysql://{}:{}@{}/FPL".format(db_user, db_pass, db_host))
+db = sqlalchemy.create_engine("mysql+pymysql://{}:{}@{}/FPL".format(
+    db_user, db_pass, db_host))
 
-engine = db.connect()
 # CLI commands
 @app.cli.command("initdb")
-def initdb():
+@click.option("testing", "-t", is_flag=True, default=False, required=False)
+def initdb(testing):
     """
     Initialise database with schema
     """
-    # with db.connect() as connection:
-    #     # Create schema
-    #     # TODO: add full schema here
-    #     connection.execute(
-    #         sqlalchemy.sql.text(
-    #             "CREATE TABLE IF NOT EXISTS USER( id INT PRIMARY KEY, email TEXT, enc_pass TEXT );"))
-    
-    Database.create_db("Database/schema.sql", engine)
-    asyncio.run(Database.add_teams(engine))
-    asyncio.run(Database.add_players(engine))
+    with db.connect() as engine:
+        DBUtils.create_db("app/DBUtils/schema.sql", engine)
+        if not testing:
+            asyncio.run(DBUtils.add_teams(engine))
+            asyncio.run(DBUtils.add_players(engine))
+
 
 @app.cli.command("updatedb")
 def updatedb():
     """
     Initialise database with schema
     """
-    # with db.connect() as connection:
-    #     # Create schema
-    #     # TODO: add full schema here
-    #     connection.execute(
-    #         sqlalchemy.sql.text(
-    #             "CREATE TABLE IF NOT EXISTS USER( id INT PRIMARY KEY, email TEXT, enc_pass TEXT );"))
-    
-    asyncio.run(Database.update_teams(engine))
-    asyncio.run(Database.update_players(engine))
+    with db.connect() as engine:
+        asyncio.run(DBUtils.update_players(engine))
+
 
 # API Routes
 # Root
@@ -69,59 +61,51 @@ def root():
     """
     Return success response
     """
-    return jsonify({ "status": "Success" })
+    return jsonify({"status": "Success"})
 
-def get_squad(team: int):
+# Element type mapping
+@app.route("/element_types", methods=["GET"])
+def types():
     """
-    Get players from :team:
-    :param: team - int (1-20) team index
+    Return element type to position mapping
     """
-    # async with aiohttp.ClientSession() as session:
-    #     fpl = FPL(session)
-    #     team = await fpl.get_team(team)
-    #     players = await team.get_players(return_json=True)
-    # return players
+    return jsonify({
+        "element_types":
+        [
+            "Goalkeeper",
+            "Defender",
+            "Midfielder",
+            "Forward"
+        ]
+    })
 
-    query = sqlalchemy.text("""SELECT * from PLAYER WHERE team_id = :x;""")
-    result = engine.execute(query, x = team)
-    result = [dict(res) for res in result]
-    return result
-
-# Players route
-@app.route("/players", methods=["GET"])
-def players():
-    """
-    Get players in a particular team via request argument
-    """
-    if "team" in request.args:
-        team_id = int(request.args["team"])
-        return jsonify(get_squad(team_id))
-    return jsonify({ "status": "Error: Specify team index" })
-
-
-def get_players():
-    """
-    Get players from :team:
-    :param: team - int (1-20) team index
-    """
-    # async with aiohttp.ClientSession() as session:
-    #     fpl = FPL(session)
-    #     team = await fpl.get_team(team)
-    #     players = await team.get_players(return_json=True)
-    # return players
-
-    query = sqlalchemy.text("""SELECT * from PLAYER;""")
-    result = engine.execute(query)
-    result = [dict(res) for res in result]
-    return result
-
-# AllPlayers route
-@app.route("/allplayers", methods=["GET"])
-def aplayers():
+# Search all players
+@app.route("/search_players", methods=["GET"])
+def search_players():
     """
     Get all players of the league
     """
-    return jsonify(get_players())
+    with db.connect() as engine:
+        if "name" in request.args:
+            query = sqlalchemy.text("""SELECT p.full_name, t.team_name, p.id, p.code, p.score, p.goals_scored, 
+                                       p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
+                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t 
+                                       WHERE p.full_name LIKE \'%{}%\' and p.team_id = t.id ORDER BY score DESC;""".format(request.args["name"]))
+        else:
+            query = sqlalchemy.text("""SELECT p.full_name, p.team_id, p.id, p.code, p.score, p.goals_scored, 
+                                       p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
+                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t 
+                                       WHERE p.team_id = t.id ORDER BY score DESC;""")
+        players = [dict(player) for player in engine.execute(query)]
+    if "name" in request.args:
+        return jsonify({
+            "players": [
+                dict(player,
+                     match=unidecode(player["full_name"]).lower().index(request.args["name"]))
+                for player in players
+            ]
+        })
+    return jsonify({"players": players})
 
 async def fpl_login(email: str, password: str) -> int:
     """
@@ -135,6 +119,7 @@ async def fpl_login(email: str, password: str) -> int:
         user = await fpl.get_user()
         return user.id
 
+
 def check_user_exists(email: str) -> bool:
     """
     Check if user with email exists in database
@@ -146,6 +131,7 @@ def check_user_exists(email: str) -> bool:
                 "SELECT * from USER WHERE email = '{}';".format(email)))
     return bool(result.all())
 
+
 def write_user(user_id: int, email: str, enc_pass: str):
     """
     Write given user to database
@@ -154,13 +140,12 @@ def write_user(user_id: int, email: str, enc_pass: str):
     :param: enc_pass - encrypted password
     """
     with db.connect() as connection:
-        connection.execute(
-            sqlalchemy.sql.text(
-                "USE FPL;"))
+        connection.execute(sqlalchemy.sql.text("USE FPL;"))
         connection.execute(
             sqlalchemy.sql.text(
                 "INSERT INTO USER (id, email, enc_pass) VALUES ({}, '{}', '{}')"
                 .format(user_id, email, enc_pass)))
+
 
 # Login route
 @app.route("/login", methods=["POST"])
@@ -173,7 +158,7 @@ def login():
         # Check if user exists
         # TODO: improve the checking mechanism with key cookie
         if check_user_exists(username):
-            return make_response({ "status": "Success" })
+            return make_response({"status": "Success"})
         else:
             password = request.form["password"]
             # Get user ID
@@ -187,7 +172,7 @@ def login():
             del fernet
 
             # Set cookie in response and forget key
-            response = make_response({ "status": "Success" })
+            response = make_response({"status": "Success"})
             response.set_cookie("key", key)
             del key
 
@@ -197,10 +182,11 @@ def login():
             return response
     except ValueError:
         # Return unauthorize code
-        return make_response({ "status": "Incorrect Credentials!" }, 401)
+        return make_response({"status": "Incorrect Credentials!"}, 401)
     except:
         # Return generic error code
-        return make_response({ "status":  "Failure"}, 500)
+        return make_response({"status": "Failure"}, 500)
+
 
 def serve():
     """
@@ -208,6 +194,7 @@ def serve():
     Note: Need not be called without waitress
     """
     return app
+
 
 if __name__ == "__main__":
     app.run()

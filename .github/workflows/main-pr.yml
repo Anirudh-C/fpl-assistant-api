@@ -7,6 +7,23 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    env:
+      FLASK_APP: app.main
+      DB_HOST: localhost:4000
+      DB_USERNAME: fpltest
+      DB_PASS: testpass
+
+    services:
+      mysql:
+        image: mysql
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: FPL
+          MYSQL_USER: ${{ env.DB_USERNAME }}
+          MYSQL_PASSWORD: ${{ env.DB_PASS }}
+        ports:
+          - 4000:3306
     steps:
       - uses: actions/checkout@v2
       - name: Install Python 3
@@ -17,6 +34,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Initialize testing DB
+        run: flask initdb -t
       - name: Run tests with pytest
         run: python -m pytest 
 
