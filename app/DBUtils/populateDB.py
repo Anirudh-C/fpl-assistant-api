@@ -47,7 +47,7 @@ async def add_players(engine, testing = False):
     check_query = text("SELECT EXISTS (SELECT 1 from PLAYER) as status;")
     res = dict(engine.execute(check_query).fetchone())
     status = res["status"]
-    if status:
+    if not status:
         async with aiohttp.ClientSession() as session:
             fpl = FPL(session)
             players = await fpl.get_players()
@@ -62,10 +62,10 @@ def add_team(Team, engine):
     query = text(
         """INSERT INTO TEAM (id, team_name, short_name, strength, strength_overall_home,
                     strength_overall_away,strength_attack_home,strength_attack_away,
-                    strength_defence_home,strength_defence_away, score_prediction)
+                    strength_defence_home,strength_defence_away)
                     VALUES (:id, :team_name, :short_name, :strength, :strength_overall_home,
                     :strength_overall_away,:strength_attack_home,:strength_attack_away,
-                    :strength_defence_home, :strength_defence_away, :score_prediction);""")
+                    :strength_defence_home, :strength_defence_away);""")
 
     engine.execute(query,
                    id=Team.id,
@@ -77,8 +77,7 @@ def add_team(Team, engine):
                    strength_attack_home=Team.strength_attack_home,
                    strength_attack_away=Team.strength_attack_away,
                    strength_defence_home=Team.strength_defence_home,
-                   strength_defence_away=Team.strength_defence_away,
-                   score_prediction = 0)
+                   strength_defence_away=Team.strength_defence_away)
 
 
 async def add_teams(engine):
@@ -86,7 +85,7 @@ async def add_teams(engine):
     check_query = text("SELECT EXISTS (SELECT 1 from TEAM) as status;")
     res = dict(engine.execute(check_query).fetchone())
     status = res["status"]
-    if status:
+    if not status:
         async with aiohttp.ClientSession() as session:
             fpl = FPL(session)
             teams = await fpl.get_teams()

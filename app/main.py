@@ -56,6 +56,8 @@ def updatedb():
     Initialise database with schema
     """
     with db.connect() as engine:
+        asyncio.run(DBUtils.update_fixtures(engine))
+        asyncio.run(DBUtils.update_teams(engine))
         asyncio.run(DBUtils.update_players(engine))
 
 
@@ -117,7 +119,7 @@ def search_players():
         })
     if "id" in request.args:
         return jsonify({
-            "players": [dict(player) for player in players]
+            "player": [dict(player) for player in players]
         })
         
     return jsonify({"players": players})
@@ -128,7 +130,7 @@ def pick_players():
     Get all players of the league
     """
     if "userid" in request.args:
-        squad,transfer_status = getUserSquad(email="demo", password="demo")
+        squad,transfer_status = asyncio.run(getUserSquad(email="demo", password="demo"))
         avltransfers = transfer_status["limit"] - transfer_status["made"]
         balance = transfer_status["bank"]
         squadIdList = [player["element"] for player in squad]
@@ -154,21 +156,26 @@ async def getUserSquad(email: str, password: str):
     """
     async with aiohttp.ClientSession() as session:
         fpl = FPL(session)
-        squad = await fpl
         await fpl.login(email,password)
         user = await fpl.get_user()
-        transfer_status = await fpl.get_user()
+        transfer_status = await user.get_transfers_status()
         squad = await user.get_team()
     return squad,transfer_status
 
-@app.route("/get_players", methods=["GET"])
+@app.route("/get_fixtures", methods=["GET"])
 def get_fixtures():
     '''
     Get all fixtures for the next gameweek
     '''
-    query = sqlalchemy.text("""SELECT (select team_name from TEAM where id = f.team_h) as Home, 
+    with db.connect() as engine:
+        query = sqlalchemy.text("""SELECT (select team_name from TEAM where id = f.team_h) as Home, 
                                 (select team_name from TEAM where id = f.team_a) as Away 
                                 from FIXTURE f;""")
+
+        fixtures = [dict(fixture) for fixture in engine.execute(query)]
+
+        return jsonify({"fixtures" : fixtures})
+
 async def fpl_login(email: str, password: str) -> int:
     """
     Login to FPL with given credentials

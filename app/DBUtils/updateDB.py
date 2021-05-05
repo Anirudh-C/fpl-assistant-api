@@ -77,7 +77,6 @@ async def update_players(engine):
             minutes[i] += float(history[i]["minutes"])
             value[i] += float(history[i]["value"])
 
-        print(minutes)
         ict_form = setHistory(feat_name = "player_ict", feat_list = ict)
         minutes_form = setHistory(feat_name = "player_minutes", feat_list = minutes)
         value_form = setHistory(feat_name = "player_value", feat_list = value)
@@ -97,7 +96,6 @@ def update_team(Team, engine):
         def_form = team_def_form[opposition]
         feat_list = [off_strength, def_strength, off_form, def_form]
         predicted_score = setHistory(feat_name = "score", feat_list = feat_list)
-        print(feat_list,predicted_score)
 
     team_score[Team.id] = predicted_score   
 
