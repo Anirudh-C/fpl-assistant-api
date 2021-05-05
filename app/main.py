@@ -92,21 +92,14 @@ def search_players():
     with db.connect() as engine:
         if "name" in request.args:
             query = sqlalchemy.text(
-                """SELECT p.full_name, t.team_name, p.id, p.code, p.score, p.goals_scored,
+                """SELECT p.full_name, t.team_name, t.short_name, p.id, p.code, p.score, p.goals_scored,
                                        p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
                                        p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t
                                        WHERE p.full_name LIKE \'%{}%\' and p.team_id = t.id ORDER BY score DESC;"""
                 .format(request.args["name"]))
-        elif "id" in request.args:
-            query = sqlalchemy.text(
-                """SELECT p.full_name, t.team_name, p.id, p.code, p.score, p.goals_scored,
-                                       p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
-                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t
-                                       WHERE p.id = {} and p.team_id = t.id ORDER BY score DESC;"""
-                .format(request.args["id"]))
         else:
             query = sqlalchemy.text(
-                """SELECT p.full_name, t.team_name, p.id, p.code, p.score, p.goals_scored,
+                """SELECT p.full_name, t.team_name, t.short_name, p.id, p.code, p.score, p.goals_scored,
                                        p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
                                        p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t
                                        WHERE p.team_id = t.id ORDER BY score DESC;"""
