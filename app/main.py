@@ -31,6 +31,7 @@ db_pass = os.environ.get("DB_PASS")
 db = sqlalchemy.create_engine("mysql+pymysql://{}:{}@{}/FPL".format(
     db_user, db_pass, db_host))
 
+
 # CLI commands
 @app.cli.command("initdb")
 @click.option("testing", "-t", is_flag=True, default=False, required=False)
@@ -45,9 +46,7 @@ def initdb(testing):
             asyncio.run(DBUtils.add_players(engine))
         else:
             asyncio.run(DBUtils.add_teams(engine))
-            asyncio.run(DBUtils.add_players(engine, testing = True))
-
-
+            asyncio.run(DBUtils.add_players(engine, testing=True))
 
 
 @app.cli.command("updatedb")
@@ -70,21 +69,16 @@ def root():
     """
     return jsonify({"status": "Success"})
 
+
 # Element type mapping
 @app.route("/element_types", methods=["GET"])
 def types():
     """
     Return element type to position mapping
     """
-    return jsonify({
-        "element_types":
-        [
-            "Goalkeeper",
-            "Defender",
-            "Midfielder",
-            "Forward"
-        ]
-    })
+    return jsonify(
+        {"element_types": ["Goalkeeper", "Defender", "Midfielder", "Forward"]})
+
 
 # Search all players
 @app.route("/search_players", methods=["GET"])
@@ -94,27 +88,33 @@ def search_players():
     """
     with db.connect() as engine:
         if "name" in request.args:
-            query = sqlalchemy.text("""SELECT p.full_name, t.team_name, p.id, p.code, p.score, p.goals_scored, 
+            query = sqlalchemy.text(
+                """SELECT p.full_name, t.team_name, p.id, p.code, p.score, p.goals_scored,
                                        p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
-                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t 
-                                       WHERE p.full_name LIKE \'%{}%\' and p.team_id = t.id ORDER BY score DESC;""".format(request.args["name"]))
-        elif "id"in request.args:
-            query = sqlalchemy.text("""SELECT p.full_name, t.team_name, p.id, p.code, p.score, p.goals_scored, 
+                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t
+                                       WHERE p.full_name LIKE \'%{}%\' and p.team_id = t.id ORDER BY score DESC;"""
+                .format(request.args["name"]))
+        elif "id" in request.args:
+            query = sqlalchemy.text(
+                """SELECT p.full_name, t.team_name, p.id, p.code, p.score, p.goals_scored,
                                        p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
-                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t 
-                                       WHERE p.id = {} and p.team_id = t.id ORDER BY score DESC;""".format(request.args["id"]))
+                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t
+                                       WHERE p.id = {} and p.team_id = t.id ORDER BY score DESC;"""
+                .format(request.args["id"]))
         else:
-            query = sqlalchemy.text("""SELECT p.full_name, t.team_name, p.id, p.code, p.score, p.goals_scored, 
+            query = sqlalchemy.text(
+                """SELECT p.full_name, t.team_name, p.id, p.code, p.score, p.goals_scored,
                                        p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
-                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t 
-                                       WHERE p.team_id = t.id ORDER BY score DESC;""")
+                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t
+                                       WHERE p.team_id = t.id ORDER BY score DESC;"""
+            )
         players = [dict(player) for player in engine.execute(query)]
     if "name" in request.args:
         return jsonify({
             "players": [
                 dict(player,
-                     match=unidecode(player["full_name"]).lower().index(request.args["name"]))
-                for player in players
+                     match=unidecode(player["full_name"]).lower().index(
+                         request.args["name"])) for player in players
             ]
         })
     if "id" in request.args:
@@ -123,6 +123,7 @@ def search_players():
         })
         
     return jsonify({"players": players})
+
 
 @app.route("/pick_players", methods=["GET"])
 def pick_players():
@@ -136,19 +137,27 @@ def pick_players():
         squadIdList = [player["element"] for player in squad]
 
         with db.connect() as engine:
-            query_all = sqlalchemy.text("SELECT id, score, now_cost from PLAYER ORDER BY score DESC;")
-            all_players = [dict(player) for player in engine.execute(query_all)]
+            query_all = sqlalchemy.text(
+                "SELECT id, score, now_cost from PLAYER ORDER BY score DESC;")
+            all_players = [
+                dict(player) for player in engine.execute(query_all)
+            ]
 
-            query_squad =  sqlalchemy.text("SELECT id, score, now_cost from PLAYER WHERE id = :id ORDER BY score DESC;")
-            user_squad = [dict(player) for id in squadIdList for player in engine.execute(query_squad, id = id)]
-        
+            query_squad = sqlalchemy.text(
+                "SELECT id, score, now_cost from PLAYER WHERE id = :id ORDER BY score DESC;"
+            )
+            user_squad = [
+                dict(player) for id in squadIdList
+                for player in engine.execute(query_squad, id=id)
+            ]
+
         # transfers = transfer_algo(all_players,user_squad, avltransfers, )
         transfers = {}
 
         return jsonify(transfers)
 
-        
-    return jsonify({"message" : "Specify the userid"})
+    return jsonify({"message": "Specify the userid"})
+
 
 async def getUserSquad(email: str, password: str):
     """
@@ -160,7 +169,8 @@ async def getUserSquad(email: str, password: str):
         user = await fpl.get_user()
         transfer_status = await user.get_transfers_status()
         squad = await user.get_team()
-    return squad,transfer_status
+    return squad, transfer_status
+
 
 @app.route("/get_fixtures", methods=["GET"])
 def get_fixtures():
@@ -189,16 +199,21 @@ async def fpl_login(email: str, password: str) -> int:
         return user.id
 
 
-def check_user_exists(email: str) -> bool:
+def check_user_exists(email: str):
     """
-    Check if user with email exists in database
+    Check if user with email exists in database and delete if exists
     :param: email - str
     """
     with db.connect() as connection:
         result = connection.execute(
             sqlalchemy.text(
-                "SELECT * from USER WHERE email = '{}';".format(email)))
-    return bool(result.all())
+                "SELECT * from USER_TABLE WHERE user_email = '{}';".format(
+                    email)))
+        if result.all():
+            connection.execute(
+                sqlalchemy.text(
+                    "DELETE from USER_TABLE where user_email = '{}';".format(
+                        email)))
 
 
 def write_user(user_id: int, email: str, enc_pass: str):
@@ -212,11 +227,13 @@ def write_user(user_id: int, email: str, enc_pass: str):
         try:
             connection.execute(sqlalchemy.sql.text("USE FPL;"))
             connection.execute(
-                sqlalchemy.sql.text("""INSERT INTO USER (id, email, enc_pass) VALUES ({}, '{}', '{}')"""
-                                   .format(user_id, email, enc_pass)))
-                    
+                sqlalchemy.sql.text(
+                    "INSERT INTO USER_TABLE (id, user_email, user_password) VALUES ({}, '{}', '{}')"
+                    .format(user_id, email, enc_pass)))
+
         except:
             pass
+
 
 # Login route
 @app.route("/login", methods=["POST"])
@@ -227,36 +244,48 @@ def login():
     try:
         username = request.form["login"]
         # Check if user exists
-        # TODO: improve the checking mechanism with key cookie
-        if check_user_exists(username):
-            return make_response({"status": "Success"})
-        else:
-            password = request.form["password"]
-            # Get user ID
-            user_id = asyncio.run(fpl_login(username, password))
+        check_user_exists(username)
 
-            # Encrypt password and forget secret information
-            key = Fernet.generate_key()
-            fernet = Fernet(key)
-            enc_pass = fernet.encrypt(password.encode())
-            del password
-            del fernet
+        # Get password
+        password = request.form["password"]
+        # Get user ID
+        user_id = asyncio.run(fpl_login(username, password))
 
-            # Set cookie in response and forget key
-            response = make_response({"status": "Success"})
-            response.set_cookie("key", key)
-            del key
+        # Encrypt password and forget secret information
+        key = Fernet.generate_key()
+        fernet = Fernet(key)
+        enc_pass = fernet.encrypt(password.encode())
+        del password
+        del fernet
 
-            # Write user
-            write_user(user_id, username, enc_pass.decode("utf-8"))
+        # Set cookie in response and forget key
+        response = make_response({"status": "Success"})
+        response.set_cookie("key", key, max_age=90 * 60 * 60 * 24)
+        response.set_cookie("user_id", str(user_id), max_age=90 * 60 * 60 * 24)
+        del key
 
-            return response
+        # Write user
+        write_user(user_id, username, enc_pass.decode("utf-8"))
+
+        return response
     except ValueError:
         # Return unauthorize code
         return make_response({"status": "Incorrect Credentials!"}, 401)
-    except:
-        # Return generic error code
-        return make_response({"status": "Failure"}, 500)
+
+
+# Username
+@app.route("/username", methods=["GET"])
+def username():
+    if "id" in request.args:
+        with db.connect() as connection:
+            result = connection.execute(
+                sqlalchemy.sql.text(
+                    "SELECT * from USER_TABLE where id='{}'".format(
+                        request.args["id"])))
+            for row in result:
+                username = row[1]
+        return make_response({"name": username})
+    return make_response({"name": ""})
 
 
 def serve():
