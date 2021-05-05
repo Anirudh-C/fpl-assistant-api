@@ -120,11 +120,6 @@ def search_players():
                          request.args["name"])) for player in players
             ]
         })
-    if "id" in request.args:
-        return jsonify({
-            "player": [dict(player) for player in players]
-        })
-        
     return jsonify({"players": players})
 
 
