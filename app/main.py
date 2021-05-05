@@ -44,6 +44,9 @@ def initdb(testing):
         if not testing:
             asyncio.run(DBUtils.add_teams(engine))
             asyncio.run(DBUtils.add_players(engine))
+            asyncio.run(DBUtils.update_fixtures(engine))
+            asyncio.run(DBUtils.update_teams(engine))
+            asyncio.run(DBUtils.update_players(engine))
         else:
             asyncio.run(DBUtils.add_teams(engine))
             asyncio.run(DBUtils.add_players(engine, testing=True))
