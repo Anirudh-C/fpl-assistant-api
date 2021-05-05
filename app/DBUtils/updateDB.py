@@ -15,7 +15,7 @@ import aiohttp
 import asyncio
 
 # Scoring Models
-from pointsPredictor import setHistory
+from .pointsPredictor import setHistory
 
 team_fixture = {} # id : next_fix_team_id
 team_att_form = {} # id : attack form
