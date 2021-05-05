@@ -169,8 +169,8 @@ def get_fixtures():
     Get all fixtures for the next gameweek
     '''
     with db.connect() as engine:
-        query = sqlalchemy.text("""SELECT (select team_name from TEAM where id = f.team_h) as Home, 
-                                (select team_name from TEAM where id = f.team_a) as Away 
+        query = sqlalchemy.text("""SELECT (select team_name from TEAM where id = f.team_h) as Home, f.team_h
+                                (select team_name from TEAM where id = f.team_a) as Away, f.team_a
                                 from FIXTURE f;""")
 
         fixtures = [dict(fixture) for fixture in engine.execute(query)]
