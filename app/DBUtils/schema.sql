@@ -5,6 +5,7 @@ USE FPL;
 
 CREATE TABLE IF NOT EXISTS TEAM(
     id INTEGER,
+    code INTEGER,
     team_name text,
     short_name text,
     strength INTEGER,

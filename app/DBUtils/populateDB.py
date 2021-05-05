@@ -62,10 +62,10 @@ def add_team(Team, engine):
     query = text(
         """INSERT INTO TEAM (id, team_name, short_name, strength, strength_overall_home,
                     strength_overall_away,strength_attack_home,strength_attack_away,
-                    strength_defence_home,strength_defence_away)
+                    strength_defence_home,strength_defence_away, code)
                     VALUES (:id, :team_name, :short_name, :strength, :strength_overall_home,
                     :strength_overall_away,:strength_attack_home,:strength_attack_away,
-                    :strength_defence_home, :strength_defence_away);""")
+                    :strength_defence_home, :strength_defence_away, :code);""")
 
     engine.execute(query,
                    id=Team.id,
@@ -77,7 +77,8 @@ def add_team(Team, engine):
                    strength_attack_home=Team.strength_attack_home,
                    strength_attack_away=Team.strength_attack_away,
                    strength_defence_home=Team.strength_defence_home,
-                   strength_defence_away=Team.strength_defence_away)
+                   strength_defence_away=Team.strength_defence_away,
+                   code = Team.code)
 
 
 async def add_teams(engine):
