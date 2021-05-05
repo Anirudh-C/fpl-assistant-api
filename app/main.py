@@ -43,6 +43,11 @@ def initdb(testing):
         if not testing:
             asyncio.run(DBUtils.add_teams(engine))
             asyncio.run(DBUtils.add_players(engine))
+        else:
+            asyncio.run(DBUtils.add_teams(engine))
+            asyncio.run(DBUtils.add_players(engine, testing = True))
+
+
 
 
 @app.cli.command("updatedb")
@@ -91,8 +96,13 @@ def search_players():
                                        p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
                                        p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t 
                                        WHERE p.full_name LIKE \'%{}%\' and p.team_id = t.id ORDER BY score DESC;""".format(request.args["name"]))
+        elif "id"in request.args:
+            query = sqlalchemy.text("""SELECT p.full_name, t.team_name, p.id, p.code, p.score, p.goals_scored, 
+                                       p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
+                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t 
+                                       WHERE p.id = {} and p.team_id = t.id ORDER BY score DESC;""".format(request.args["id"]))
         else:
-            query = sqlalchemy.text("""SELECT p.full_name, p.team_id, p.id, p.code, p.score, p.goals_scored, 
+            query = sqlalchemy.text("""SELECT p.full_name, t.team_name, p.id, p.code, p.score, p.goals_scored, 
                                        p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
                                        p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t 
                                        WHERE p.team_id = t.id ORDER BY score DESC;""")
@@ -105,8 +115,60 @@ def search_players():
                 for player in players
             ]
         })
+    if "id" in request.args:
+        return jsonify({
+            "players": [dict(player) for player in players]
+        })
+        
     return jsonify({"players": players})
 
+@app.route("/pick_players", methods=["GET"])
+def pick_players():
+    """
+    Get all players of the league
+    """
+    if "userid" in request.args:
+        squad,transfer_status = getUserSquad(email="demo", password="demo")
+        avltransfers = transfer_status["limit"] - transfer_status["made"]
+        balance = transfer_status["bank"]
+        squadIdList = [player["element"] for player in squad]
+
+        with db.connect() as engine:
+            query_all = sqlalchemy.text("SELECT id, score, now_cost from PLAYER ORDER BY score DESC;")
+            all_players = [dict(player) for player in engine.execute(query_all)]
+
+            query_squad =  sqlalchemy.text("SELECT id, score, now_cost from PLAYER WHERE id = :id ORDER BY score DESC;")
+            user_squad = [dict(player) for id in squadIdList for player in engine.execute(query_squad, id = id)]
+        
+        # transfers = transfer_algo(all_players,user_squad, avltransfers, )
+        transfers = {}
+
+        return jsonify(transfers)
+
+        
+    return jsonify({"message" : "Specify the userid"})
+
+async def getUserSquad(email: str, password: str):
+    """
+    Get the current user squad
+    """
+    async with aiohttp.ClientSession() as session:
+        fpl = FPL(session)
+        squad = await fpl
+        await fpl.login(email,password)
+        user = await fpl.get_user()
+        transfer_status = await fpl.get_user()
+        squad = await user.get_team()
+    return squad,transfer_status
+
+@app.route("/get_players", methods=["GET"])
+def get_fixtures():
+    '''
+    Get all fixtures for the next gameweek
+    '''
+    query = sqlalchemy.text("""SELECT (select team_name from TEAM where id = f.team_h) as Home, 
+                                (select team_name from TEAM where id = f.team_a) as Away 
+                                from FIXTURE f;""")
 async def fpl_login(email: str, password: str) -> int:
     """
     Login to FPL with given credentials
@@ -140,12 +202,14 @@ def write_user(user_id: int, email: str, enc_pass: str):
     :param: enc_pass - encrypted password
     """
     with db.connect() as connection:
-        connection.execute(sqlalchemy.sql.text("USE FPL;"))
-        connection.execute(
-            sqlalchemy.sql.text(
-                "INSERT INTO USER (id, email, enc_pass) VALUES ({}, '{}', '{}')"
-                .format(user_id, email, enc_pass)))
-
+        try:
+            connection.execute(sqlalchemy.sql.text("USE FPL;"))
+            connection.execute(
+                sqlalchemy.sql.text("""INSERT INTO USER (id, email, enc_pass) VALUES ({}, '{}', '{}')"""
+                                   .format(user_id, email, enc_pass)))
+                    
+        except:
+            pass
 
 # Login route
 @app.route("/login", methods=["POST"])

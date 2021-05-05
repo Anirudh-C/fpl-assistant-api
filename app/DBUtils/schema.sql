@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS TEAM(
     strength_attack_away INTEGER,
     strength_defence_home INTEGER,
     strength_defence_away INTEGER,
+    score_prediction integer,
     CONSTRAINT pk_team PRIMARY KEY (id)
 );
 
