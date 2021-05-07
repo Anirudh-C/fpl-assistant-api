@@ -119,35 +119,51 @@ def search_players():
 @app.route("/pick_players", methods=["GET"])
 def pick_players():
     """
-    Get all players of the league
+    Get player picks
     """
-    if "userid" in request.args:
-        squad,transfer_status = asyncio.run(getUserSquad(email="demo", password="demo"))
-        avltransfers = transfer_status["limit"] - transfer_status["made"]
-        balance = transfer_status["bank"]
-        squadIdList = [player["element"] for player in squad]
+    if "user_id" in request.cookies and "key" in request.cookies:
+        try:
+            with db.connect() as engine:
+                user_result = engine.execute(
+                    sqlalchemy.text(
+                        "SELECT * from USER_TABLE where id = :id;"),
+                    id=int(request.cookies.get("user_id")))
 
-        with db.connect() as engine:
-            query_all = sqlalchemy.text(
-                "SELECT id, score, now_cost from PLAYER ORDER BY score DESC;")
-            all_players = [
-                dict(player) for player in engine.execute(query_all)
-            ]
+                user = dict(user_result.first())
+                fernet = Fernet(request.cookies.get("key"))
+                password = fernet.decrypt(
+                    user["user_password"].encode()).decode()
+                del fernet
 
-            query_squad = sqlalchemy.text(
-                "SELECT id, score, now_cost from PLAYER WHERE id = :id ORDER BY score DESC;"
-            )
-            user_squad = [
-                dict(player) for id in squadIdList
-                for player in engine.execute(query_squad, id=id)
-            ]
+                squad, transfer_status = asyncio.run(
+                    getUserSquad(user["user_email"], password))
+                avltransfers = transfer_status["limit"] - \
+                    transfer_status["made"]
+                balance = transfer_status["bank"]
+                squadIdList = [player["element"] for player in squad]
 
-        # transfers = transfer_algo(all_players,user_squad, avltransfers, )
-        transfers = {}
+                query_all = sqlalchemy.text(
+                    "SELECT id, score, now_cost from PLAYER ORDER BY score DESC;"
+                )
+                all_players = [
+                    dict(player) for player in engine.execute(query_all)
+                ]
 
-        return jsonify(transfers)
+                query_squad = sqlalchemy.text(
+                    "SELECT id, score, now_cost from PLAYER WHERE id = :id ORDER BY score DESC;"
+                )
 
-    return jsonify({"message": "Specify the userid"})
+                user_squad = [
+                    dict(player) for id in squadIdList
+                    for player in engine.execute(query_squad, id=id)
+                ]
+
+                # # transfers = transfer_algo(all_players,user_squad, avltransfers, )
+                transfers = {"squad": user_squad}
+            return jsonify(transfers)
+        except:
+            return jsonify({"message": "Invalid"})
+    return make_response({"status": "Not authorized!"}, 401)
 
 
 async def getUserSquad(email: str, password: str):
@@ -156,7 +172,7 @@ async def getUserSquad(email: str, password: str):
     """
     async with aiohttp.ClientSession() as session:
         fpl = FPL(session)
-        await fpl.login(email,password)
+        await fpl.login(email, password)
         user = await fpl.get_user()
         transfer_status = await user.get_transfers_status()
         squad = await user.get_team()
@@ -169,7 +185,8 @@ def get_fixtures():
     Get all fixtures for the next gameweek
     '''
     with db.connect() as engine:
-        query = sqlalchemy.text("""SELECT (select team_name from TEAM where id = f.team_h) as Home, 
+        query = sqlalchemy.text(
+            """SELECT (select team_name from TEAM where id = f.team_h) as Home,
                                 (select code from TEAM where id = f.team_h) home_code,
                                 (select team_name from TEAM where id = f.team_a) as Away,
                                 (select code from TEAM where id = f.team_a) away_code
@@ -177,7 +194,8 @@ def get_fixtures():
 
         fixtures = [dict(fixture) for fixture in engine.execute(query)]
 
-        return jsonify({"fixtures" : fixtures})
+        return jsonify({"fixtures": fixtures})
+
 
 async def fpl_login(email: str, password: str) -> int:
     """
@@ -270,6 +288,7 @@ def login():
 @app.route("/username", methods=["GET"])
 def username():
     if "id" in request.args:
+        username = ""
         with db.connect() as connection:
             result = connection.execute(
                 sqlalchemy.sql.text(
