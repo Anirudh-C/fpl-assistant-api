@@ -40,7 +40,7 @@ def add_player(Player, session):
                     total_points = Player.total_points, goals_scored = Player.goals_scored,
                     assists = Player.assists, clean_sheets = Player.clean_sheets, saves = Player.saves, bonus = Player.bonus,
                     bps = Player.bps, influence = Player.influence, creativity = Player.creativity, 
-                    threat = Player.threat, ict_index = Player.ict_index, full_name = full_name, score = 100 * random.random())
+                    threat = Player.threat, ict_index = Player.ict_index, full_name = full_name, score = None)
 
 
 async def add_players(engine, testing = False):

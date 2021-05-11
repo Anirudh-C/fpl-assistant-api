@@ -26,19 +26,18 @@ team_score = {} # id : predicted_score
 
 def update_player(Player, session, ict_form, minutes_form, value_form):
 
-    score = -1
-    # if Player.team in team_score.keys():
-    #     opposition = team_fixture[Player.team][0]
-    #     if Player.element_type == 1 or Player.element_type == 2:
-    #         tscore = team_score[opposition] 
-    #         feat_list = [minutes_form, float(Player.form), ict_form, value_form, tscore]
-    #         score = setHistory(feat_name = "defPlayer_points", feat_list = feat_list)
-    #     else:
-    #         tscore = team_score[Player.team]
-    #         feat_list = [minutes_form, float(Player.form), ict_form, value_form, tscore]
-    #         print(feat_list)
-    #         score = setHistory(feat_name = "attPlayer_points", feat_list = feat_list)
-
+    score = None
+    if Player.team in team_fixture.keys():
+        opposition = team_fixture[Player.team][0]
+        if Player.element_type == 1 or Player.element_type == 2:
+            tscore = team_score[opposition] 
+            feat_list = [minutes_form, float(Player.now_cost), ict_form, value_form, tscore]
+            score = setHistory(feat_name = "defPlayer_points", feat_list = feat_list)
+        else:
+            tscore = team_score[Player.team]
+            feat_list = [minutes_form, float(Player.now_cost), ict_form, value_form, tscore]
+            score = setHistory(feat_name = "attPlayer_points", feat_list = feat_list)
+    print(score)
     query = text("""UPDATE PLAYER SET element_status = :element_status,
                     chance_of_playing_next_round = :chance_of_playing_next_round,
                     chance_of_playing_this_round = :chance_of_playing_this_round, ep_next = :ep_next,
