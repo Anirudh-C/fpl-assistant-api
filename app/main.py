@@ -2,6 +2,7 @@
 import os
 from unidecode import unidecode
 
+import sys
 import flask
 from flask import jsonify, request, make_response
 import click
@@ -92,16 +93,18 @@ def search_players():
     with db.connect() as engine:
         if "name" in request.args:
             query = sqlalchemy.text(
-                """SELECT p.full_name, t.team_name, t.short_name, p.id, p.code, p.score, p.goals_scored,
+                """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER)
+                                       SELECT p.full_name, t.team_name, t.short_name, p.id, p.code, p.score, p.goals_scored,
                                        p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
-                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t
+                                       p.points_per_game, p.chance_of_playing_next_round from all_players p, TEAM t
                                        WHERE p.full_name LIKE \'%{}%\' and p.team_id = t.id ORDER BY score DESC;"""
                 .format(request.args["name"]))
         else:
             query = sqlalchemy.text(
-                """SELECT p.full_name, t.team_name, t.short_name, p.id, p.code, p.score, p.goals_scored,
+                """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER) 
+                                       SELECT p.full_name, t.team_name, t.short_name, p.id, p.code, p.score, p.goals_scored,
                                        p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
-                                       p.points_per_game, p.chance_of_playing_next_round from PLAYER p, TEAM t
+                                       p.points_per_game, p.chance_of_playing_next_round, p.week_rank from all_players p, TEAM t
                                        WHERE p.team_id = t.id ORDER BY score DESC;"""
             )
         players = [dict(player) for player in engine.execute(query)]
@@ -137,20 +140,23 @@ def pick_players():
 
                 squad, transfer_status = asyncio.run(
                     getUserSquad(user["user_email"], password))
-                avltransfers = transfer_status["limit"] - \
-                    transfer_status["made"]
+
+                avltransfers = transfer_status["limit"] - transfer_status["made"]
                 balance = transfer_status["bank"]
                 squadIdList = [player["element"] for player in squad]
 
                 query_all = sqlalchemy.text(
-                    "SELECT id, score, now_cost from PLAYER ORDER BY score DESC;"
+                    """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER) 
+                       SELECT id, score, now_cost, week_rank from all_players ORDER BY score DESC;"""
                 )
+
                 all_players = [
                     dict(player) for player in engine.execute(query_all)
                 ]
 
                 query_squad = sqlalchemy.text(
-                    "SELECT id, score, now_cost from PLAYER WHERE id = :id ORDER BY score DESC;"
+                    """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER) 
+                       SELECT id, score, now_cost, week_rank from all_players WHERE id = :id ORDER BY score DESC;"""
                 )
 
                 user_squad = [
@@ -162,7 +168,7 @@ def pick_players():
                 transfers = {"squad": user_squad}
             return jsonify(transfers)
         except:
-            return jsonify({"message": "Invalid"})
+            return jsonify({"message": "Invalid: {}".format(sys.exc_info())})
     return make_response({"status": "Not authorized!"}, 401)
 
 
@@ -178,6 +184,28 @@ async def getUserSquad(email: str, password: str):
         squad = await user.get_team()
     return squad, transfer_status
 
+app.route("/trasfers", methods=["POST"])
+def transfers():
+    """
+    Make transfers
+    """
+    if "user_id" in request.cookies and "key" in request.cookies:
+        try:
+            with db.connect() as engine:
+                user_result = engine.execute(
+                    sqlalchemy.text(
+                        "SELECT * from USER_TABLE where id = :id;"),
+                    id=int(request.cookies.get("user_id")))
+
+                user = dict(user_result.first())
+                fernet = Fernet(request.cookies.get("key"))
+                password = fernet.decrypt(
+                    user["user_password"].encode()).decode()
+                del fernet
+
+        except:
+            return jsonify({"message": "Invalid: {}".format(sys.exc_info())})
+    return make_response({"status": "Not authorized!"}, 401)
 
 @app.route("/get_fixtures", methods=["GET"])
 def get_fixtures():
@@ -196,6 +224,16 @@ def get_fixtures():
 
         return jsonify({"fixtures": fixtures})
 
+# async def makeUserTransfer(email: str, password: str, inplayers: list, outplayers: list):
+#     """
+#     Make the transfers
+#     """
+#     async with aiohttp.ClientSession() as session:
+#         fpl = FPL(session)
+#         await fpl.login(email, password)
+#         user = await fpl.get_user()
+#         ret = await user.transfer(inplayers, outplayers)
+#     return 
 
 async def fpl_login(email: str, password: str) -> int:
     """
@@ -218,9 +256,11 @@ def check_user_exists(email: str):
     with db.connect() as connection:
         result = connection.execute(
             sqlalchemy.text(
-                "SELECT * from USER_TABLE WHERE user_email = '{}';".format(
+                "SELECT EXISTS (SELECT * from USER_TABLE WHERE user_email = '{}') as status;".format(
                     email)))
-        if result.all():
+        result = dict(result.fetchone())
+        status = result["status"]
+        if status:
             connection.execute(
                 sqlalchemy.text(
                     "DELETE from USER_TABLE where user_email = '{}';".format(
