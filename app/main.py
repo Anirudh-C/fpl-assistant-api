@@ -93,12 +93,12 @@ def search_players():
     with db.connect() as engine:
         if "name" in request.args:
             query = sqlalchemy.text(
-                """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER)
+                """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER) 
                                        SELECT p.full_name, t.team_name, t.short_name, p.id, p.code, p.score, p.goals_scored,
                                        p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
-                                       p.points_per_game, p.chance_of_playing_next_round from all_players p, TEAM t
-                                       WHERE p.full_name LIKE \'%{}%\' and p.team_id = t.id ORDER BY score DESC;"""
-                .format(request.args["name"]))
+                                       p.points_per_game, p.chance_of_playing_next_round, p.week_rank from all_players p, TEAM t
+                                       WHERE p.full_name LIKE \'%{}%\' and p.team_id = t.id ORDER BY score DESC;""".format(request.args["name"]))
+
         else:
             query = sqlalchemy.text(
                 """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER) 
@@ -147,7 +147,7 @@ def pick_players():
 
                 query_all = sqlalchemy.text(
                     """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER) 
-                       SELECT id, score, now_cost, week_rank from all_players ORDER BY score DESC;"""
+                       SELECT * from all_players ORDER BY score DESC;"""
                 )
 
                 all_players = [
@@ -156,7 +156,7 @@ def pick_players():
 
                 query_squad = sqlalchemy.text(
                     """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER) 
-                       SELECT id, score, now_cost, week_rank from all_players WHERE id = :id ORDER BY score DESC;"""
+                       SELECT * from all_players WHERE id = :id ORDER BY score DESC;"""
                 )
 
                 user_squad = [
@@ -165,7 +165,7 @@ def pick_players():
                 ]
 
                 # # transfers = transfer_algo(all_players,user_squad, avltransfers, )
-                transfers = {"squad": user_squad}
+                transfers = {"squad": all_players}
             return jsonify(transfers)
         except:
             return jsonify({"message": "Invalid: {}".format(sys.exc_info())})
@@ -224,16 +224,19 @@ def get_fixtures():
 
         return jsonify({"fixtures": fixtures})
 
-# async def makeUserTransfer(email: str, password: str, inplayers: list, outplayers: list):
-#     """
-#     Make the transfers
-#     """
-#     async with aiohttp.ClientSession() as session:
-#         fpl = FPL(session)
-#         await fpl.login(email, password)
-#         user = await fpl.get_user()
-#         ret = await user.transfer(inplayers, outplayers)
-#     return 
+async def makeUserTransfer(email: str, password: str, inplayers: list, outplayers: list):
+    """
+    Make the transfers
+    """
+    async with aiohttp.ClientSession() as session:
+        fpl = FPL(session)
+        await fpl.login(email, password)
+        user = await fpl.get_user()
+        try:
+            await user.transfer(inplayers, outplayers)
+        except aiohttp.client_exceptions.ContentTypeError:
+            pass
+    return {"status" : "Success"}
 
 async def fpl_login(email: str, password: str) -> int:
     """

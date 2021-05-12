@@ -37,7 +37,7 @@ def update_player(Player, session, ict_form, minutes_form, value_form):
             tscore = team_score[Player.team]
             feat_list = [minutes_form, float(Player.now_cost), ict_form, value_form, tscore]
             score = setHistory(feat_name = "attPlayer_points", feat_list = feat_list)
-    print(score)
+    
     query = text("""UPDATE PLAYER SET element_status = :element_status,
                     chance_of_playing_next_round = :chance_of_playing_next_round,
                     chance_of_playing_this_round = :chance_of_playing_this_round, ep_next = :ep_next,
@@ -64,7 +64,7 @@ async def update_players(engine):
 
     for player in players:
         history = player.history
-        history.reverse
+        history.reverse()
 
         history_len = min(len(history), 3)
         ict = [0] * 3
