@@ -67,13 +67,13 @@ def setHistory(feat_name, feat_list):
                                           # Score here would be the one derived from off A vs def B.
 
         coeffs = [0.107617, 0.007059, 0.058934, -0.050233, 0.065789, -0.261031]
-        link_function = 'poisson'
+        link_function = 'identity'
 
     elif feat_name == 'defPlayer_points': #For a defensive player (element  = 1 or 2). Example use for team A vs B and we want to predict for a team A defender. Score here would be off B vs Def A. 
                                           # Basically, def A player use off B vs def A and att A player use off A vs def B score.  
 
         coeffs = [0.107034, 0.007108, 0.059717, -0.01240, 0.062791, -0.239849]
-        link_function = 'poisson'
+        link_function = 'identity'
 
     else:
         print("ERROR")
