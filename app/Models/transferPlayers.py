@@ -87,7 +87,8 @@ def transfer_algo(all_players: list,user_squad: list, avltransfers: int, balance
         all_swaps = keeper_swaps + defender_swaps + midfielders_swaps + forwards_swaps
         all_swaps.sort(key=scoreSort, reverse=True) 
 
-        my_swaps = bestSwaps(avltransfers, all_swaps, balance)
+        fpl_balance = 10 * balance
+        my_swaps = bestSwaps(avltransfers, all_swaps, fpl_balance)
         our_swaps = []
         for swap in my_swaps:
                 our_swaps.append((swap.player_out, swap.player_in))
