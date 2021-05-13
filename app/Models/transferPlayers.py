@@ -1,4 +1,3 @@
-import json
 
 #All swap aptions are maintained as objects irrespective of whether they are feasible or not.
 class Swap:
@@ -8,14 +7,7 @@ class Swap:
                 self.del_cost = cost
                 self.player_in = p1
                 self.player_out = p2
-
-
-def jsonList(jfile):
-        
-        data = json.load(jfile)
-        players = [player for player in data['squad']]
-      
-        return players        
+       
 
 #Since swaps can be made only if position is same, function creates lists of players for different positions.  
 def positionwiseLists(allPlayers):
@@ -47,13 +39,15 @@ def createSwaps(players, subs):
 def bestSwaps(swap_count, swaps, balance):
 
         #iterate through sorted bu score array to find first swap that is feasible.
+        if swap_count == 0:
+                return []
         if swap_count == 1: 
 
                 for swap in swaps:
                         if swap.del_cost + balance >= 0:
                                 return [swap]
                                 
-        if swap_count == 2:
+        else:
 
                 best_score = 0
                 first_swap, second_swap = None, None
@@ -70,7 +64,7 @@ def bestSwaps(swap_count, swaps, balance):
 
                 return [first_swap, second_swap]
 
-        return []
+        
 
                 
 def scoreSort(swap):
@@ -78,7 +72,9 @@ def scoreSort(swap):
         return swap.del_score
 
 def transfer_algo(all_players: list,user_squad: list, avltransfers: int, balance: float):
-
+        
+        for player in user_squad:
+                all_players.remove(player)
         all_keepers, all_defenders, all_midfielders, all_forwards = positionwiseLists(all_players) 
         user_keepers, user_defenders, user_midfielders, user_forwards = positionwiseLists(user_squad) 
 
@@ -98,14 +94,3 @@ def transfer_algo(all_players: list,user_squad: list, avltransfers: int, balance
 
         return our_swaps
 
-
-#Use case.
-if __name__=='__main__':
-
-        jfile = open('response.json', "r")
-        players = jsonList(jfile)
-        swapcount = 2
-        balance = 2.3
-        utd_p = [player for player in players if player['team_id'] == 4]
-        swaps = transfer_algo(players, utd_p, swapcount, balance)
-      

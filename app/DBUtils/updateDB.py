@@ -15,7 +15,7 @@ import aiohttp
 import asyncio
 
 # Scoring Models
-from .pointsPredictor import setHistory
+import app.Models as Models
 
 team_fixture = {} # id : next_fix_team_id
 team_att_form = {} # id : attack form
@@ -32,11 +32,11 @@ def update_player(Player, session, ict_form, minutes_form, value_form):
         if Player.element_type == 1 or Player.element_type == 2:
             tscore = team_score[opposition] 
             feat_list = [minutes_form, float(Player.now_cost), ict_form, value_form, tscore]
-            score = setHistory(feat_name = "defPlayer_points", feat_list = feat_list)
+            score = Models.setHistory(feat_name = "defPlayer_points", feat_list = feat_list)
         else:
             tscore = team_score[Player.team]
             feat_list = [minutes_form, float(Player.now_cost), ict_form, value_form, tscore]
-            score = setHistory(feat_name = "attPlayer_points", feat_list = feat_list)
+            score = Models.setHistory(feat_name = "attPlayer_points", feat_list = feat_list)
     
     query = text("""UPDATE PLAYER SET element_status = :element_status,
                     chance_of_playing_next_round = :chance_of_playing_next_round,
@@ -76,9 +76,9 @@ async def update_players(engine):
             minutes[i] += float(history[i]["minutes"])
             value[i] += float(history[i]["value"])
 
-        ict_form = setHistory(feat_name = "player_ict", feat_list = ict)
-        minutes_form = setHistory(feat_name = "player_minutes", feat_list = minutes)
-        value_form = setHistory(feat_name = "player_value", feat_list = value)
+        ict_form = Models.setHistory(feat_name = "player_ict", feat_list = ict)
+        minutes_form = Models.setHistory(feat_name = "player_minutes", feat_list = minutes)
+        value_form = Models.setHistory(feat_name = "player_value", feat_list = value)
 
         update_player(player, engine, ict_form, minutes_form, value_form)
 
@@ -94,7 +94,7 @@ def update_team(Team, engine):
         off_form = team_att_form[Team.id]
         def_form = team_def_form[opposition]
         feat_list = [off_strength, def_strength, off_form, def_form]
-        predicted_score = setHistory(feat_name = "score", feat_list = feat_list)
+        predicted_score = Models.setHistory(feat_name = "score", feat_list = feat_list)
 
     team_score[Team.id] = predicted_score   
 
@@ -142,8 +142,8 @@ async def update_teams(engine):
                         elif player.element_type == 3 or player.element_type == 4:
                             attack_points[i] = attack_points[i] + history[i]["total_points"]
 
-                team_att = setHistory(feat_name = "team_att", feat_list = attack_points)
-                team_def = setHistory(feat_name = "team_def", feat_list = defence_points)
+                team_att = Models.setHistory(feat_name = "team_att", feat_list = attack_points)
+                team_def = Models.setHistory(feat_name = "team_def", feat_list = defence_points)
 
                 team_att_form[team.id] = team_att
                 team_def_form[team.id] = team_def

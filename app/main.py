@@ -16,7 +16,7 @@ from fpl import FPL
 # DB imports
 import sqlalchemy
 import app.DBUtils as DBUtils
-
+import app.Models as Models
 # Encryption imports
 from cryptography.fernet import Fernet
 
@@ -127,9 +127,10 @@ def pick_players():
     if "user_id" in request.cookies and "key" in request.cookies:
         try:
             with db.connect() as engine:
+
                 user_result = engine.execute(
                     sqlalchemy.text(
-                        "SELECT * from USER_TABLE where id = :id;"),
+                        "SELECT * FROM USER_TABLE WHERE id = :id;"),
                     id=int(request.cookies.get("user_id")))
 
                 user = dict(user_result.first())
@@ -141,12 +142,17 @@ def pick_players():
                 squad, transfer_status = asyncio.run(
                     getUserSquad(user["user_email"], password))
 
-                avltransfers = transfer_status["limit"] - transfer_status["made"]
-                balance = transfer_status["bank"]
+                avltransfers = 2
+                if transfer_status["status"] != 'unlimited':
+                    avltransfers = transfer_status["limit"] - transfer_status["made"]
+                
+                balance = transfer_status["bank"]*0.1
                 squadIdList = [player["element"] for player in squad]
 
                 query_all = sqlalchemy.text(
-                    """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER) 
+                    """WITH all_players as (SELECT p.full_name, t.team_name, t.short_name,
+                        p.id, p.code, p.score, p.element_type, p.now_cost, rank() OVER (ORDER BY score desc) as week_rank 
+                        from PLAYER p, TEAM t where t.id = p.team_id) 
                        SELECT * from all_players ORDER BY score DESC;"""
                 )
 
@@ -155,7 +161,9 @@ def pick_players():
                 ]
 
                 query_squad = sqlalchemy.text(
-                    """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER) 
+                    """WITH all_players as (SELECT p.full_name, t.team_name, t.short_name,
+                        p.id, p.code, p.score, p.element_type, p.now_cost, rank() OVER (ORDER BY score desc) as week_rank 
+                        from PLAYER p, TEAM t where t.id = p.team_id)
                        SELECT * from all_players WHERE id = :id ORDER BY score DESC;"""
                 )
 
@@ -163,9 +171,9 @@ def pick_players():
                     dict(player) for id in squadIdList
                     for player in engine.execute(query_squad, id=id)
                 ]
-
-                # # transfers = transfer_algo(all_players,user_squad, avltransfers, )
-                transfers = {"squad": all_players}
+                
+                transfers = Models.transfer_algo(all_players,user_squad, avltransfers, balance)
+                transfers = {"transfers": transfers}
             return jsonify(transfers)
         except:
             return jsonify({"message": "Invalid: {}".format(sys.exc_info())})
@@ -182,9 +190,10 @@ async def getUserSquad(email: str, password: str):
         user = await fpl.get_user()
         transfer_status = await user.get_transfers_status()
         squad = await user.get_team()
+
     return squad, transfer_status
 
-app.route("/trasfers", methods=["POST"])
+@app.route("/transfers", methods=["POST"])  
 def transfers():
     """
     Make transfers
@@ -202,10 +211,32 @@ def transfers():
                 password = fernet.decrypt(
                     user["user_password"].encode()).decode()
                 del fernet
+                inplayers = request.json["inplayers"]
+                outplayers = request.json["outplayers"]
+
+                response = asyncio.run(makeUserTransfer(email=user["user_email"], password = password,
+                                                         inplayers = inplayers,outplayers = outplayers))
+
+                return jsonify(response)
 
         except:
             return jsonify({"message": "Invalid: {}".format(sys.exc_info())})
     return make_response({"status": "Not authorized!"}, 401)
+
+async def makeUserTransfer(email: str, password: str, inplayers: list, outplayers: list):
+    """
+    Make the transfers
+    """
+    async with aiohttp.ClientSession() as session:
+        fpl = FPL(session)
+        await fpl.login(email, password)
+        user = await fpl.get_user()
+        try:
+            await user.transfer(inplayers, outplayers)
+        except aiohttp.client_exceptions.ContentTypeError:
+            # print(sys.exc_info())
+            pass
+    return {"status" : "Success"}
 
 @app.route("/get_fixtures", methods=["GET"])
 def get_fixtures():
@@ -224,19 +255,7 @@ def get_fixtures():
 
         return jsonify({"fixtures": fixtures})
 
-async def makeUserTransfer(email: str, password: str, inplayers: list, outplayers: list):
-    """
-    Make the transfers
-    """
-    async with aiohttp.ClientSession() as session:
-        fpl = FPL(session)
-        await fpl.login(email, password)
-        user = await fpl.get_user()
-        try:
-            await user.transfer(inplayers, outplayers)
-        except aiohttp.client_exceptions.ContentTypeError:
-            pass
-    return {"status" : "Success"}
+
 
 async def fpl_login(email: str, password: str) -> int:
     """
@@ -290,7 +309,7 @@ def write_user(user_id: int, email: str, enc_pass: str):
 
 
 # Login route
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["POST"])  
 def login():
     """
     Login to FPL on request
