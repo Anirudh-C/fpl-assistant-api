@@ -93,15 +93,16 @@ def search_players():
     with db.connect() as engine:
         if "name" in request.args:
             query = sqlalchemy.text(
-                """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER) 
+                """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER)
                                        SELECT p.full_name, t.team_name, t.short_name, p.id, p.code, p.score, p.goals_scored,
                                        p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
                                        p.points_per_game, p.chance_of_playing_next_round, p.week_rank from all_players p, TEAM t
-                                       WHERE p.full_name LIKE \'%{}%\' and p.team_id = t.id ORDER BY score DESC;""".format(request.args["name"]))
+                                       WHERE p.full_name LIKE \'%{}%\' and p.team_id = t.id ORDER BY score DESC;"""
+                .format(request.args["name"]))
 
         else:
             query = sqlalchemy.text(
-                """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER) 
+                """WITH all_players as (SELECT *, rank() OVER (ORDER BY score desc) as week_rank from PLAYER)
                                        SELECT p.full_name, t.team_name, t.short_name, p.id, p.code, p.score, p.goals_scored,
                                        p.assists, p.clean_sheets, t.strength, p.element_type, p.bonus, p.now_cost,
                                        p.points_per_game, p.chance_of_playing_next_round, p.week_rank from all_players p, TEAM t
@@ -144,17 +145,17 @@ def pick_players():
 
                 avltransfers = 2
                 if transfer_status["status"] != 'unlimited':
-                    avltransfers = transfer_status["limit"] - transfer_status["made"]
-                
-                balance = transfer_status["bank"]*0.1
+                    avltransfers = transfer_status["limit"] - transfer_status[
+                        "made"]
+
+                balance = transfer_status["bank"] * 0.1
                 squadIdList = [player["element"] for player in squad]
 
                 query_all = sqlalchemy.text(
                     """WITH all_players as (SELECT p.full_name, t.team_name, t.short_name,
-                        p.id, p.code, p.score, p.element_type, p.now_cost, rank() OVER (ORDER BY score desc) as week_rank 
-                        from PLAYER p, TEAM t where t.id = p.team_id) 
-                       SELECT * from all_players ORDER BY score DESC;"""
-                )
+                        p.id, p.code, p.score, p.element_type, p.now_cost, rank() OVER (ORDER BY score desc) as week_rank
+                        from PLAYER p, TEAM t where t.id = p.team_id)
+                       SELECT * from all_players ORDER BY score DESC;""")
 
                 all_players = [
                     dict(player) for player in engine.execute(query_all)
@@ -162,7 +163,7 @@ def pick_players():
 
                 query_squad = sqlalchemy.text(
                     """WITH all_players as (SELECT p.full_name, t.team_name, t.short_name,
-                        p.id, p.code, p.score, p.element_type, p.now_cost, rank() OVER (ORDER BY score desc) as week_rank 
+                        p.id, p.code, p.score, p.element_type, p.now_cost, rank() OVER (ORDER BY score desc) as week_rank
                         from PLAYER p, TEAM t where t.id = p.team_id)
                        SELECT * from all_players WHERE id = :id ORDER BY score DESC;"""
                 )
@@ -171,12 +172,14 @@ def pick_players():
                     dict(player) for id in squadIdList
                     for player in engine.execute(query_squad, id=id)
                 ]
-                
-                transfers = Models.transfer_algo(all_players,user_squad, avltransfers, balance)
+
+                transfers = Models.transfer_algo(all_players, user_squad,
+                                                 avltransfers, balance)
                 transfers = {"transfers": transfers}
             return jsonify(transfers)
         except:
-            return jsonify({"message": "Invalid: {}".format(sys.exc_info())})
+            return make_response(
+                {"status": "Invalid: {}".format(sys.exc_info())}, 500)
     return make_response({"status": "Not authorized!"}, 401)
 
 
@@ -193,7 +196,8 @@ async def getUserSquad(email: str, password: str):
 
     return squad, transfer_status
 
-@app.route("/transfers", methods=["POST"])  
+
+@app.route("/transfers", methods=["POST"])
 def transfers():
     """
     Make transfers
@@ -214,16 +218,21 @@ def transfers():
                 inplayers = request.json["inplayers"]
                 outplayers = request.json["outplayers"]
 
-                response = asyncio.run(makeUserTransfer(email=user["user_email"], password = password,
-                                                         inplayers = inplayers,outplayers = outplayers))
+                asyncio.run(
+                    makeUserTransfer(email=user["user_email"],
+                                     password=password,
+                                     inplayers=inplayers,
+                                     outplayers=outplayers))
 
-                return jsonify(response)
-
+                return jsonify({"status": "sucess"})
         except:
-            return jsonify({"message": "Invalid: {}".format(sys.exc_info())})
+            return jsonify({"status": "Failure"}, 500)
+
     return make_response({"status": "Not authorized!"}, 401)
 
-async def makeUserTransfer(email: str, password: str, inplayers: list, outplayers: list):
+
+async def makeUserTransfer(email: str, password: str, inplayers: list,
+                           outplayers: list):
     """
     Make the transfers
     """
@@ -234,9 +243,8 @@ async def makeUserTransfer(email: str, password: str, inplayers: list, outplayer
         try:
             await user.transfer(inplayers, outplayers)
         except aiohttp.client_exceptions.ContentTypeError:
-            # print(sys.exc_info())
             pass
-    return {"status" : "Success"}
+
 
 @app.route("/get_fixtures", methods=["GET"])
 def get_fixtures():
@@ -254,7 +262,6 @@ def get_fixtures():
         fixtures = [dict(fixture) for fixture in engine.execute(query)]
 
         return jsonify({"fixtures": fixtures})
-
 
 
 async def fpl_login(email: str, password: str) -> int:
@@ -278,8 +285,8 @@ def check_user_exists(email: str):
     with db.connect() as connection:
         result = connection.execute(
             sqlalchemy.text(
-                "SELECT EXISTS (SELECT * from USER_TABLE WHERE user_email = '{}') as status;".format(
-                    email)))
+                "SELECT EXISTS (SELECT * from USER_TABLE WHERE user_email = '{}') as status;"
+                .format(email)))
         result = dict(result.fetchone())
         status = result["status"]
         if status:
@@ -309,7 +316,7 @@ def write_user(user_id: int, email: str, enc_pass: str):
 
 
 # Login route
-@app.route("/login", methods=["POST"])  
+@app.route("/login", methods=["POST"])
 def login():
     """
     Login to FPL on request
