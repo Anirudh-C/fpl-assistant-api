@@ -7,7 +7,7 @@ class Swap:
         self.player_out = p2
 
     def __bool__(self):
-        return self.player_in or self.player_out
+        return bool(self.player_in) or bool(self.player_out)
 
 
 #Since swaps can be made only if position is same, function creates lists of players for different positions.
