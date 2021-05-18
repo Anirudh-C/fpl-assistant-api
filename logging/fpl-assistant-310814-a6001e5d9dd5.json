@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "fpl-assistant-310814",
+  "private_key_id": "a6001e5d9dd5b3f165edf63189886c54b9988397",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCcRMGGaO2wCIA9\nDnbsSJdOPGUZLCee8Nh/OP7l0eke+Jbkt9FQZepR+c24U5VEsLx4kUKmNFYUxSHY\n5sAMHfX8AjDRlwKD98MZH8crDe2z2zov10VhPpHp+EaJ1W1PnEEwlaZoaBzo42+z\nL2GPT5cDUteWhYzT1HARQhgl/nHsTF9Qp46Ct0ISJdNT3iow+8b32UyEkMk6JVqt\nLbZMfImJTYy+XRAyS6R2vCbzR3laS66oy3XQZ6knATzb0b9H3w0AtxtF1wZK4KPN\nQyMwIwon0xU52WGSLoRwDZkP3D+RDbANAXh9hPlZZAEpeOymFXav5rs3lf+DNdVu\nHb+Jt1aHAgMBAAECggEABo4HxBiQp8qjfmwl5uFgn2J/JyAoBU269xMv9fnpGmh5\nA90GBaZQvuGIlIvE/h2fujr1nb0iQzrFobCEK73x/IEnBROdgmWZJGul0hOCfgHb\nHficq2iRfEvywYNXU3iNb3lHgqejVs17ePuqzvUas4P9EQ5HCvelP8QS+T0EEFJP\nADqwRSlyFyzRjNibJlGA3U3R7/MGAVrVuAMV1hFecp3YI81q/jQAe91LDlfg4QuI\nqiKSNyV9/Rg1Ji6fhIrR8t8voVXLaEYoo7En9jYpb6o17vaQVC2hBJTrsKxXmHyd\nkUxdD/EKAO71ymyLUPuUWQ8DNRbhtbSrl+pHIAyXsQKBgQDNNeKY0oqgGZGBTKd5\ngOE5QkrH2UODRiNa6UbCpO3wejbrYLlcqeTOcqBWcuhptYy6VfhBxdCD7fagoyE+\n4PzCeexQGvAVFWLPhsznBGaWV7vSvJLUxkZps7eS143M8dCYG8/7bTI1UqSAZSC+\nox/iyCZDfnVXKPnCe2OCul7HjwKBgQDC8eqg9WR76xWyQd4hAOAN3ei70guf4F+V\nJtGj7Op2ylXKpyf1IMEaYdAchm44QMjaR4jzQLkflKhvHN3JxNC86ZXCRa64BiGk\ny6Y5/qb5LwSUPJnGvoAor03lqgI/I9QjCDOYyVpQXjISeLIplet9T0XkBIzjJxLi\nj9dJ6PtFiQKBgEdvgKgucq909yAJrSsw4DZsi1eynDvwiJI3LrjHbUUPZlrd2ukV\nA1+Sq5oseheCabDcCIXs9L9YcUhOQV6AN70DcG4aUoUkYrdXd7Db6VJgzDN6Dasg\nMpbNRxRJEUXM0A6DcA1YX+gMEtPXYGS8qHbrsdZBCVwEGZ3IEkYJ1sClAoGATOVV\n8pW5RDQPw9e9gfExb+bXlbadxTuhGFlOmkWqmp7nRl+3IDcCVKC+kXHpaiEL2SYc\nfC9MlotyARo21g7fc5UD8LTB3W71uGZoNDohrOsB+GMLGV0tel7j8DKmXjeIxyTG\nDX9nM4pkX+riBAtR74TkgbPVywgvp9SrTEktTFkCgYAeOye+LaG9lnI12oC7TCWX\nYxEvYz/22EyKxTRnVkOKWmyiVZWqfVVZ9Gltq7Xan1yO89c2zrGh2u/uMKXt2Pbd\nbrTo2V+sWLNYreP3nU2beOU+vV7CfkHQ3B/vL8V5w+otY5sRJ+NW+m5aF99hsrA9\nFiyZJVIQuaRVsFrMnDVoWw==\n-----END PRIVATE KEY-----\n",
+  "client_email": "fpl-logs@fpl-assistant-310814.iam.gserviceaccount.com",
+  "client_id": "114156121792081689968",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/fpl-logs%40fpl-assistant-310814.iam.gserviceaccount.com"
+}

@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logstash-input-google-pubsub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logstash-input-google-pubsub
+  template:
+    metadata:
+      labels:
+        app: logstash-input-google-pubsub
+    spec:
+      containers:
+      - name: logstash-input-google-pubsub
+        image: strangeloop1710/logstash-pubsub
