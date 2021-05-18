@@ -1,11 +1,17 @@
 # Basic imports
 import os
+import sys
 from unidecode import unidecode
 
 import sys
 import flask
 from flask import jsonify, request, make_response
 import click
+
+# Logging
+import logging
+logging.basicConfig(stream=sys.stdout)
+logger = logging.getLogger('waitress')
 
 # FPL API wrapper imports
 import aiohttp
@@ -71,6 +77,7 @@ def root():
     """
     Return success response
     """
+    logger.info("GET 200 /")
     return jsonify({"status": "Success"})
 
 
@@ -80,6 +87,7 @@ def types():
     """
     Return element type to position mapping
     """
+    logger.info("GET 200 /element_types")
     return jsonify(
         {"element_types": ["Goalkeeper", "Defender", "Midfielder", "Forward"]})
 
@@ -110,6 +118,7 @@ def search_players():
             )
         players = [dict(player) for player in engine.execute(query)]
     if "name" in request.args:
+        logger.info("GET 200 /search_players {}".format(request.args["name"]))
         return jsonify({
             "players": [
                 dict(player,
@@ -117,6 +126,8 @@ def search_players():
                          request.args["name"])) for player in players
             ]
         })
+
+    logger.info("GET 200 /search_players")
     return jsonify({"players": players})
 
 
@@ -175,11 +186,13 @@ def pick_players():
 
                 transfers = Models.transfer_algo(all_players, user_squad,
                                                  avltransfers, balance)
-                transfers = {"transfers": transfers}
-            return jsonify(transfers)
+                logger.info("GET 200 /pick_transfers")
+            return jsonify({"transfers": transfers})
         except:
+            logger.error("GET 500 /pick_transfers")
             return make_response(
                 {"status": "Invalid: {}".format(sys.exc_info())}, 500)
+    logger.error("GET 401 /pick_transfers")
     return make_response({"status": "Not authorized!"}, 401)
 
 
@@ -224,10 +237,13 @@ def transfers():
                                      inplayers=inplayers,
                                      outplayers=outplayers))
 
+                logger.info("POST 200 /transfers")
                 return jsonify({"status": "sucess"})
         except:
+            logger.error("POST 500 /transfers")
             return jsonify({"status": "Failure"}, 500)
 
+    logger.error("POST 401 /transfers")
     return make_response({"status": "Not authorized!"}, 401)
 
 
@@ -261,6 +277,7 @@ def get_fixtures():
 
         fixtures = [dict(fixture) for fixture in engine.execute(query)]
 
+        logger.info("GET 200 /get_fixtures")
         return jsonify({"fixtures": fixtures})
 
 
@@ -347,15 +364,18 @@ def login():
         # Write user
         write_user(user_id, username, enc_pass.decode("utf-8"))
 
+        logger.info("POST 200 /login")
         return response
     except ValueError:
         # Return unauthorize code
+        logger.error("POST 401 /login")
         return make_response({"status": "Incorrect Credentials!"}, 401)
 
 
 # Username
 @app.route("/username", methods=["GET"])
 def username():
+    logger.info("GET 200 /username")
     if "id" in request.args:
         username = ""
         with db.connect() as connection:
